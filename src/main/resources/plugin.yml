@@ -1,0 +1,7 @@
+name: Tethers Core
+version: '1.0-SNAPSHOT'
+main: dev.star122o.tethersCore.TethersCore
+api-version: '1.21'
+load: STARTUP
+authors: [ Stargaze ]
+website: https://star122o.dev
