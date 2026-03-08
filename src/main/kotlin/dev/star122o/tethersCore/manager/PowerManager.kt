@@ -3,7 +3,6 @@ package dev.star122o.tethersCore.manager
 import dev.star122o.tethersCore.powers.BlockPower
 import dev.star122o.tethersCore.powers.BuffSpec
 import dev.star122o.tethersCore.powers.ItemPower
-import dev.star122o.tethersCore.powers.ItemPowerSlot
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player

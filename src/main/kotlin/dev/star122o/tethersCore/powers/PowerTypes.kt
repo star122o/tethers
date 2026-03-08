@@ -57,13 +57,13 @@ enum class ItemPowerSlot {
             INVENTORY -> inventory.contents.any { it?.type == material }
             ANY -> {
                 MAIN_HAND.matches(player, material)
-                    || OFF_HAND.matches(player, material)
-                    || HELMET.matches(player, material)
-                    || CHESTPLATE.matches(player, material)
-                    || LEGGINGS.matches(player, material)
-                    || BOOTS.matches(player, material)
-                    || HOTBAR.matches(player, material)
-                    || INVENTORY.matches(player, material)
+                        || OFF_HAND.matches(player, material)
+                        || HELMET.matches(player, material)
+                        || CHESTPLATE.matches(player, material)
+                        || LEGGINGS.matches(player, material)
+                        || BOOTS.matches(player, material)
+                        || HOTBAR.matches(player, material)
+                        || INVENTORY.matches(player, material)
             }
         }
     }

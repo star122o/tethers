@@ -16,12 +16,13 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.reflections:reflections:0.10.2")
-    implementation("org.jetbrains.exposed:exposed-core:1.1.1")
-    implementation("org.jetbrains.exposed:exposed-dao:1.1.1")
-    implementation("org.jetbrains.exposed:exposed-jdbc:1.1.1")
-    implementation("org.xerial:sqlite-jdbc:3.51.2.0")
+
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
+    compileOnly("org.reflections:reflections:0.10.2")
+    compileOnly("org.jetbrains.exposed:exposed-core:1.1.1")
+    compileOnly("org.jetbrains.exposed:exposed-dao:1.1.1")
+    compileOnly("org.jetbrains.exposed:exposed-jdbc:1.1.1")
+    compileOnly("org.xerial:sqlite-jdbc:3.51.2.0")
 }
 
 tasks {
@@ -31,22 +32,26 @@ tasks {
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21")
     }
+
+    shadowJar {
+        archiveClassifier.set("")
+    }
+
+    build {
+        dependsOn(shadowJar)
+    }
+
+    processResources {
+        val props = mapOf("version" to version)
+        inputs.properties(props)
+        filteringCharset = "UTF-8"
+        filesMatching("plugin.yml") {
+            expand(props)
+        }
+    }
 }
 
 val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
-}
-
-tasks.build {
-    dependsOn("shadowJar")
-}
-
-tasks.processResources {
-    val props = mapOf("version" to version)
-    inputs.properties(props)
-    filteringCharset = "UTF-8"
-    filesMatching("plugin.yml") {
-        expand(props)
-    }
 }
