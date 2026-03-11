@@ -1,4 +1,4 @@
-name: Tethers Core
+name: TethersCore
 version: "${version}"
 main: dev.star122o.tethersCore.TethersCore
 api-version: '1.21'
@@ -7,7 +7,7 @@ authors: [ Stargaze ]
 website: https://star122o.dev
 commands:
   link:
-    description: Link yourself to the item in your main hand.
+    description: Link yourself to the single item in your main hand.
     usage: /link
 libraries:
   - org.jetbrains.kotlin:kotlin-stdlib:2.0.20

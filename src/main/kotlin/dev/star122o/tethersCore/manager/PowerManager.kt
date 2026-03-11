@@ -11,15 +11,17 @@ import org.bukkit.scheduler.BukkitTask
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import java.lang.reflect.Modifier
+import kotlin.math.abs
 
 enum class LinkType {
     BLOCK,
-    ITEM
+    ITEM,
 }
 
 class PowerManager(
     private val plugin: JavaPlugin,
     private val databaseManager: DatabaseManager,
+    private val artifactManager: LinkArtifactManager,
 ) {
     private val blockPowers = mutableMapOf<String, BlockPower>()
     private val itemPowers = mutableMapOf<String, ItemPower>()
@@ -81,41 +83,57 @@ class PowerManager(
         val link = databaseManager.get(player.uniqueId) ?: return
 
         when (link.linkType) {
-            LinkType.BLOCK -> applyBlockPower(player, link.linkName)
-            LinkType.ITEM -> applyItemPower(player, link.linkName)
+            LinkType.BLOCK -> applyBlockPower(player, link)
+            LinkType.ITEM -> applyItemPower(player, link)
         }
     }
 
-    private fun applyBlockPower(player: Player, linkName: String) {
-        val material = Material.matchMaterial(linkName) ?: return
+    private fun applyBlockPower(player: Player, link: PlayerLink) {
+        val material = Material.matchMaterial(link.linkName) ?: return
         val power = blockPowers[material.name] ?: return
-        if (!isNearBlock(player, power.itemName, power.radius)) return
+        val placedBlock = databaseManager.getPlacedBlock(link.linkId) ?: return
+        val world = Bukkit.getWorld(placedBlock.world)
 
-        applyBuffs(player, power.buffs)
-    }
-
-    private fun applyItemPower(player: Player, linkName: String) {
-        val material = Material.matchMaterial(linkName) ?: return
-        val power = itemPowers[material.name] ?: return
-        if (!power.slots.any { slot -> slot.matches(player, power.itemName) }) return
-
-        applyBuffs(player, power.buffs)
-    }
-
-    private fun isNearBlock(player: Player, material: Material, radius: Int): Boolean {
-        val center = player.location.block
-
-        for (x in -radius..radius) {
-            for (y in -radius..radius) {
-                for (z in -radius..radius) {
-                    if (center.getRelative(x, y, z).type == material) {
-                        return true
-                    }
-                }
-            }
+        if (world == null) {
+            databaseManager.clearIfMatches(player.uniqueId, link.linkId)
+            return
         }
 
-        return false
+        val block = world.getBlockAt(placedBlock.x, placedBlock.y, placedBlock.z)
+        if (block.type != material || placedBlock.material != material.name) {
+            databaseManager.clearIfMatches(player.uniqueId, link.linkId)
+            return
+        }
+
+        if (player.world.uid != world.uid) {
+            return
+        }
+
+        if (!isNearBlock(player, placedBlock.x, placedBlock.y, placedBlock.z, power.radius)) {
+            return
+        }
+
+        applyBuffs(player, power.buffs)
+    }
+
+    private fun applyItemPower(player: Player, link: PlayerLink) {
+        val material = Material.matchMaterial(link.linkName) ?: return
+        val power = itemPowers[material.name] ?: return
+        if (!power.slots.any { slot ->
+                slot.matches(player) { item ->
+                    artifactManager.matches(item, material.name, link.linkId)
+                }
+            }) {
+            return
+        }
+
+        applyBuffs(player, power.buffs)
+    }
+
+    private fun isNearBlock(player: Player, x: Int, y: Int, z: Int, radius: Int): Boolean {
+        return abs(player.location.blockX - x) <= radius
+                && abs(player.location.blockY - y) <= radius
+                && abs(player.location.blockZ - z) <= radius
     }
 
     private fun applyBuffs(player: Player, buffs: List<BuffSpec>) {

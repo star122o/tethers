@@ -1,8 +1,6 @@
 package dev.star122o.tethersCore
 
-import dev.star122o.tethersCore.manager.DatabaseManager
-import dev.star122o.tethersCore.manager.LinkType
-import dev.star122o.tethersCore.manager.PowerManager
+import dev.star122o.tethersCore.manager.*
 import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -11,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin
 
 class TethersCore : JavaPlugin() {
     private lateinit var databaseManager: DatabaseManager
+    private lateinit var artifactManager: LinkArtifactManager
     private lateinit var powerManager: PowerManager
 
     override fun onEnable() {
@@ -19,8 +18,14 @@ class TethersCore : JavaPlugin() {
         databaseManager = DatabaseManager(this)
         databaseManager.connect()
 
-        powerManager = PowerManager(this, databaseManager)
+        artifactManager = LinkArtifactManager(this)
+        powerManager = PowerManager(this, databaseManager, artifactManager)
         powerManager.start()
+
+        server.pluginManager.registerEvents(
+            LinkArtifactListener(this, databaseManager, artifactManager),
+            this,
+        )
     }
 
     override fun onDisable() {
@@ -46,15 +51,24 @@ class TethersCore : JavaPlugin() {
             return true
         }
 
-        val material = sender.inventory.itemInMainHand.type
+        val item = sender.inventory.itemInMainHand
+        val material = item.type
         if (material == Material.AIR) {
-            sender.sendMessage("Hold a block in your main hand first.")
+            sender.sendMessage("Hold an item in your main hand first.")
+            return true
+        }
+
+        if (item.amount != 1) {
+            sender.sendMessage("Hold exactly one item to link it.")
             return true
         }
 
         val linkType = if (material.isBlock) LinkType.BLOCK else LinkType.ITEM
-        databaseManager.set(sender.uniqueId, linkType, material.name)
-        sender.sendMessage("Linked you to ${linkType.name.lowercase()} ${material.name}.")
+        val identity = artifactManager.createIdentity(sender.uniqueId)
+        artifactManager.writeIdentity(item, identity)
+        sender.inventory.setItemInMainHand(item)
+        databaseManager.set(sender.uniqueId, linkType, material.name, identity.linkId)
+        sender.sendMessage("Linked ${material.name.lowercase()} with id ${identity.linkId}.")
         return true
     }
 }
